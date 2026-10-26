@@ -48,8 +48,26 @@ type SpaceArticle = {
   summary: string;
 };
 
-const ISS_API = "https://api.wheretheiss.at/v1/satellites/25544";
-const NEWS_API = "https://api.spaceflightnewsapi.net/v4/articles/?limit=5";
+const ISS_API =
+  process.env.NEXT_PUBLIC_ISS_API_URL ??
+  "https://api.wheretheiss.at/v1/satellites/25544";
+
+const SPACE_NEWS_API =
+  process.env.NEXT_PUBLIC_SPACE_NEWS_API_URL ??
+  "https://api.spaceflightnewsapi.net/v4/articles/";
+
+const NEWS_LIMIT = Number(
+  process.env.NEXT_PUBLIC_SPACE_NEWS_LIMIT ?? "5"
+);
+
+const ISS_REFRESH_INTERVAL = Number(
+  process.env.NEXT_PUBLIC_ISS_REFRESH_INTERVAL_MS ?? "5000"
+);
+
+const NEWS_REFRESH_INTERVAL = Number(
+  process.env.NEXT_PUBLIC_NEWS_REFRESH_INTERVAL_MS ?? "300000"
+);
+
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString(undefined, {
@@ -107,7 +125,12 @@ export default function HomePage() {
 
   async function fetchNews() {
     try {
-      const response = await fetch(NEWS_API, { cache: "no-store" });
+      const url = new URL(SPACE_NEWS_API);
+      url.searchParams.set("limit", String(NEWS_LIMIT));
+
+      const response = await fetch(url.toString(), {
+        cache: "no-store",
+      });
 
       if (!response.ok) {
         throw new Error("News service unavailable.");
@@ -138,11 +161,11 @@ export default function HomePage() {
 
     const issTimer = window.setInterval(() => {
       void fetchISS();
-    }, 5000);
+    }, ISS_REFRESH_INTERVAL);
 
     const newsTimer = window.setInterval(() => {
       void fetchNews();
-    }, 5 * 60 * 1000);
+    }, NEWS_REFRESH_INTERVAL);
 
     return () => {
       window.clearInterval(issTimer);
