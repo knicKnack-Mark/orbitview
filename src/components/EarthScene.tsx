@@ -92,7 +92,7 @@ function Earth({
         .clone()
         .multiplyScalar(Math.cos(angle))
         .add(tangent.clone().multiplyScalar(Math.sin(angle)))
-        .multiplyScalar(ORBIT_RADIUS);
+        .multiplyScalar(markerPosition.length());
 
       points.push(point);
     }
