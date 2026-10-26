@@ -1,40 +1,100 @@
 
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useRef } from "react";
+import { Suspense, useRef } from "react";
 import * as THREE from "three";
 
 function Earth() {
-  const earthRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
+  const cloudRef = useRef<THREE.Mesh>(null);
+
+  const [earthTexture, normalTexture, cloudTexture, lightsTexture] =
+    useLoader(THREE.TextureLoader, [
+      "/textures/earth.jpg",
+      "/textures/earth_normal.jpg",
+      "/textures/earth_clouds.png",
+      "/textures/earth_lights.png",
+    ]);
+
+  earthTexture.colorSpace = THREE.SRGBColorSpace;
+  cloudTexture.colorSpace = THREE.SRGBColorSpace;
+  lightsTexture.colorSpace = THREE.SRGBColorSpace;
 
   useFrame((_, delta) => {
-    if (earthRef.current) {
-      earthRef.current.rotation.y += delta * 0.035;
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.025;
+    }
+
+    if (cloudRef.current) {
+      cloudRef.current.rotation.y += delta * 0.008;
     }
   });
 
   return (
     <group>
-      <mesh ref={earthRef}>
+      <group ref={groupRef}>
+        {/* Real Earth surface */}
+        <mesh>
+          <sphereGeometry args={[2, 96, 96]} />
+          <meshStandardMaterial
+            map={earthTexture}
+            normalMap={normalTexture}
+            normalScale={new THREE.Vector2(0.45, 0.45)}
+            roughness={0.95}
+            metalness={0}
+          />
+        </mesh>
+
+        {/* Night-side city lights */}
+        <mesh scale={1.001}>
+          <sphereGeometry args={[2, 96, 96]} />
+          <meshBasicMaterial
+            map={lightsTexture}
+            transparent
+            opacity={0.35}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      </group>
+
+      {/* Moving cloud layer */}
+      <mesh ref={cloudRef} scale={1.008}>
         <sphereGeometry args={[2, 96, 96]} />
         <meshStandardMaterial
-          color="#1769aa"
-          roughness={0.85}
-          metalness={0.05}
-          emissive="#031b35"
-          emissiveIntensity={0.35}
+          map={cloudTexture}
+          transparent
+          opacity={0.28}
+          depthWrite={false}
+          roughness={1}
         />
       </mesh>
 
-      <mesh scale={1.035}>
+      {/* Atmospheric glow */}
+      <mesh scale={1.045}>
         <sphereGeometry args={[2, 64, 64]} />
         <meshBasicMaterial
-          color="#00d9ff"
-          transparent
-          opacity={0.10}
+          color="#159dff"
           side={THREE.BackSide}
+          transparent
+          opacity={0.23}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Outer blue atmospheric rim */}
+      <mesh scale={1.065}>
+        <sphereGeometry args={[2, 64, 64]} />
+        <meshBasicMaterial
+          color="#0077ff"
+          side={THREE.BackSide}
+          transparent
+          opacity={0.12}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
         />
       </mesh>
     </group>
@@ -42,7 +102,7 @@ function Earth() {
 }
 
 function StarField() {
-  const points = useRef<THREE.Points>(null);
+  const pointsRef = useRef<THREE.Points>(null);
 
   const positions = new Float32Array(1800 * 3);
 
@@ -52,8 +112,14 @@ function StarField() {
     positions[i + 2] = (Math.random() - 0.5) * 45;
   }
 
+  useFrame((_, delta) => {
+    if (pointsRef.current) {
+      pointsRef.current.rotation.y += delta * 0.003;
+    }
+  });
+
   return (
-    <points ref={points}>
+    <points ref={pointsRef}>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
@@ -61,13 +127,49 @@ function StarField() {
         />
       </bufferGeometry>
       <pointsMaterial
-        color="#a8eaff"
+        color="#b8e8ff"
         size={0.035}
         transparent
-        opacity={0.8}
+        opacity={0.85}
         sizeAttenuation
       />
     </points>
+  );
+}
+
+function SceneContent() {
+  return (
+    <>
+      <color attach="background" args={["#030914"]} />
+      <ambientLight intensity={1.1} />
+      <directionalLight position={[5, 3, 5]} intensity={2.5} />
+      <pointLight
+        position={[-5, -2, -4]}
+        color="#008cff"
+        intensity={5}
+      />
+
+      <StarField />
+      <Earth />
+
+      <OrbitControls
+        enablePan={false}
+        enableZoom
+        minDistance={3.2}
+        maxDistance={10}
+        rotateSpeed={0.65}
+        zoomSpeed={0.7}
+      />
+    </>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <mesh>
+      <sphereGeometry args={[2, 32, 32]} />
+      <meshStandardMaterial color="#1266a0" wireframe />
+    </mesh>
   );
 }
 
@@ -79,21 +181,9 @@ export default function EarthScene() {
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={1.4} />
-        <directionalLight position={[5, 3, 5]} intensity={3} />
-        <pointLight position={[-5, -2, -4]} color="#008cff" intensity={8} />
-
-        <StarField />
-        <Earth />
-
-        <OrbitControls
-          enablePan={false}
-          enableZoom
-          minDistance={3.2}
-          maxDistance={10}
-          rotateSpeed={0.65}
-          zoomSpeed={0.7}
-        />
+        <Suspense fallback={<LoadingFallback />}>
+          <SceneContent />
+        </Suspense>
       </Canvas>
     </div>
   );
