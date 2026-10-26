@@ -17,6 +17,7 @@ import {
   Orbit,
   ExternalLink,
   RefreshCw,
+  Clock3,
 } from "lucide-react";
 
 const EarthScene = dynamic(() => import("@/components/EarthScene"), {
@@ -48,8 +49,7 @@ type SpaceArticle = {
 };
 
 const ISS_API = "https://api.wheretheiss.at/v1/satellites/25544";
-const NEWS_API =
-  "https://api.spaceflightnewsapi.net/v4/articles/?limit=5";
+const NEWS_API = "https://api.spaceflightnewsapi.net/v4/articles/?limit=5";
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString(undefined, {
@@ -124,8 +124,12 @@ export default function HomePage() {
 
   async function refreshAll() {
     setRefreshing(true);
-    await Promise.all([fetchISS(), fetchNews()]);
-    setRefreshing(false);
+
+    try {
+      await Promise.all([fetchISS(), fetchNews()]);
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   useEffect(() => {
@@ -145,6 +149,8 @@ export default function HomePage() {
       window.clearInterval(newsTimer);
     };
   }, []);
+
+  const isLive = Boolean(iss && !issError);
 
   return (
     <main className="orbit-app">
@@ -206,7 +212,7 @@ export default function HomePage() {
 
             <span className="live-indicator">
               <span className="status-dot" />
-              {iss ? "LIVE" : "CONNECTING"}
+              {isLive ? "LIVE" : issError ? "RETRYING" : "CONNECTING"}
             </span>
 
             <button
@@ -231,8 +237,11 @@ export default function HomePage() {
                 <Signal size={14} /> EARTH ORBITAL OBSERVATION
               </div>
               <h1>Space Operations</h1>
-              <p>Real-time orbital data, visualized in three dimensions.</p>
+              <p>
+                Real-time orbital data, visualized in three dimensions.
+              </p>
             </div>
+
             <div className="mission-badge">
               <Activity size={16} />
               ISS / NORAD 25544
@@ -258,9 +267,7 @@ export default function HomePage() {
                 <Activity size={18} />
               </div>
               <div className="orbit-value">
-                {iss
-                  ? Math.round(iss.velocity).toLocaleString()
-                  : "—"}
+                {iss ? Math.round(iss.velocity).toLocaleString() : "—"}
                 <small> km/h</small>
               </div>
               <div className="stat-foot">Current reported speed</div>
@@ -301,11 +308,19 @@ export default function HomePage() {
                 <span className="live-tag">3D SCENE</span>
               </div>
 
-              <EarthScene />
+              <EarthScene
+                latitude={iss?.latitude ?? null}
+                longitude={iss?.longitude ?? null}
+                altitude={iss?.altitude ?? null}
+              />
 
               <div className="earth-footer">
-                <span><span className="legend-dot cyan" /> Planetary view</span>
-                <span><span className="legend-dot blue" /> Atmospheric glow</span>
+                <span>
+                  <span className="legend-dot cyan" /> Live ISS marker
+                </span>
+                <span>
+                  <span className="legend-dot blue" /> Orbital trajectory
+                </span>
                 <span>Drag to rotate · Scroll to zoom</span>
               </div>
             </div>
@@ -318,13 +333,34 @@ export default function HomePage() {
                   </h2>
                   <p>International Space Station</p>
                 </div>
-                <span className="status-dot" />
+                <span
+                  className={`status-dot ${isLive ? "" : "status-dot-offline"}`}
+                />
+              </div>
+
+              <div className="tracking-status">
+                <div className="tracking-status-icon">
+                  {isLive ? <Signal size={18} /> : <Clock3 size={18} />}
+                </div>
+                <div>
+                  <strong>
+                    {isLive
+                      ? "Tracking active"
+                      : issError
+                        ? "Connection interrupted"
+                        : "Acquiring signal"}
+                  </strong>
+                  <p>
+                    {isLive
+                      ? "Live position data received"
+                      : "Waiting for the next successful update"}
+                  </p>
+                </div>
+                <span className="tracking-status-light" />
               </div>
 
               {issError && (
-                <div className="api-message error-message">
-                  {issError}
-                </div>
+                <div className="api-message error-message">{issError}</div>
               )}
 
               <div className="telemetry-list">
@@ -355,6 +391,14 @@ export default function HomePage() {
                     ? `${iss.latitude.toFixed(4)}, ${iss.longitude.toFixed(4)}`
                     : "Waiting for satellite data"}
                 </p>
+              </div>
+
+              <div className="telemetry-update">
+                <Clock3 size={14} />
+                <span>Last successful update</span>
+                <strong>
+                  {lastUpdated ? lastUpdated.toLocaleTimeString() : "Pending"}
+                </strong>
               </div>
 
               <div className="data-source">
@@ -389,7 +433,9 @@ export default function HomePage() {
             )}
 
             {!articles.length && !newsError && (
-              <div className="news-empty">Loading latest space articles...</div>
+              <div className="news-empty">
+                Loading latest space articles...
+              </div>
             )}
 
             <div className="news-grid">
@@ -404,7 +450,11 @@ export default function HomePage() {
                   <div className="news-image">
                     {article.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={article.image_url} alt="" loading="lazy" />
+                      <img
+                        src={article.image_url}
+                        alt=""
+                        loading="lazy"
+                      />
                     ) : (
                       <Orbit size={30} />
                     )}
@@ -414,7 +464,9 @@ export default function HomePage() {
                       {article.news_site} · {formatDate(article.published_at)}
                     </span>
                     <h3>{article.title}</h3>
-                    <p>{article.summary || "Read the full article for details."}</p>
+                    <p>
+                      {article.summary || "Read the full article for details."}
+                    </p>
                     <span className="read-article">
                       Read article <ExternalLink size={13} />
                     </span>
@@ -431,7 +483,9 @@ export default function HomePage() {
 
           <footer className="dashboard-footer">
             <span>ORBITVIEW / SPACE &amp; EARTH MONITOR</span>
-            <span>Independent educational visualization · Public data</span>
+            <span>
+              Independent educational visualization · Public data
+            </span>
           </footer>
         </div>
       </section>
