@@ -2,6 +2,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   Activity,
@@ -20,7 +21,7 @@ import {
   Clock3,
 } from "lucide-react";
 import GroundTrackMap from "@/components/GroundTrackMap";
-
+import { saveTelemetryRecord } from "@/lib/telemetry-history";
 
 const EarthScene = dynamic(() => import("@/components/EarthScene"), {
   ssr: false,
@@ -175,6 +176,30 @@ export default function HomePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!iss) return;
+
+    const timestamp = Number(iss.timestamp);
+
+    if (
+      !Number.isFinite(timestamp) ||
+      !Number.isFinite(iss.latitude) ||
+      !Number.isFinite(iss.longitude) ||
+      !Number.isFinite(iss.altitude) ||
+      !Number.isFinite(iss.velocity)
+    ) {
+      return;
+    }
+
+    saveTelemetryRecord({
+      timestamp: timestamp * 1000,
+      latitude: iss.latitude,
+      longitude: iss.longitude,
+      altitude: iss.altitude,
+      velocity: iss.velocity,
+    });
+  }, [iss]);
+
   const isLive = Boolean(iss && !issError);
 
   return (
@@ -205,6 +230,9 @@ export default function HomePage() {
           <a className="nav-item" href="#news">
             <Newspaper size={18} /> Space News
           </a>
+          <Link className="nav-item" href="/analytics">
+            <Activity size={18} /> Analytics
+          </Link>
         </nav>
 
         <div className="sidebar-status">
