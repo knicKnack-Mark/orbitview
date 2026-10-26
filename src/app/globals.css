@@ -922,3 +922,197 @@ body {
     animation: none;
   }
 }
+
+
+/* ========================================
+   ORBITVIEW — ISS GROUND TRACK
+======================================== */
+
+.ground-track-card {
+  min-width: 0;
+  overflow: hidden;
+  padding: 24px;
+  border: 1px solid rgba(105, 177, 205, 0.14);
+  border-radius: 18px;
+  background:
+    radial-gradient(
+      ellipse at 50% 45%,
+      rgba(0, 242, 254, 0.045),
+      transparent 65%
+    ),
+    #08121e;
+}
+
+.ground-track-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ground-track-header h2 {
+  margin: 7px 0;
+  color: #edf8ff;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.ground-track-header p {
+  margin: 0;
+  color: #7f9cac;
+  font-size: 12px;
+}
+
+.section-eyebrow {
+  color: #00dce8;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.ground-track-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(0, 242, 254, 0.15);
+  border-radius: 999px;
+  background: rgba(0, 242, 254, 0.05);
+  color: #a8faff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00f2a6;
+  box-shadow: 0 0 10px rgba(0, 242, 166, 0.7);
+  animation: ground-track-pulse 1.8s ease-in-out infinite;
+}
+
+.status-dot.offline {
+  background: #71808c;
+  box-shadow: none;
+  animation: none;
+}
+
+.ground-track-map {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(78, 143, 170, 0.13);
+  border-radius: 12px;
+  background: #071521;
+}
+
+.ground-track-map svg {
+  display: block;
+}
+
+.ground-track-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(7, 21, 33, 0.65);
+  color: #a9c6d4;
+  font-size: 12px;
+  text-align: center;
+}
+
+.ground-track-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(105, 177, 205, 0.12);
+}
+
+.track-legend {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #91a9b8;
+  font-size: 11px;
+}
+
+.legend-line {
+  display: inline-block;
+  width: 22px;
+  height: 2px;
+  border-radius: 5px;
+  background: #00f2fe;
+  box-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+}
+
+.track-coordinates {
+  color: #00e8f5;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+}
+
+.ground-track-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding-top: 18px;
+}
+
+.ground-track-stats > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ground-track-stats span {
+  color: #718b9b;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+}
+
+.ground-track-stats strong {
+  overflow-wrap: anywhere;
+  color: #e8f7ff;
+  font-family: var(--font-mono, monospace);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+@keyframes ground-track-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.8);
+  }
+}
+
+@media (max-width: 600px) {
+  .ground-track-card {
+    padding: 16px;
+  }
+
+  .ground-track-header {
+    flex-direction: column;
+  }
+
+  .ground-track-stats {
+    gap: 8px;
+  }
+
+  .ground-track-stats strong {
+    font-size: 12px;
+  }
+}
