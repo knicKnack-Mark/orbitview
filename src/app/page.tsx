@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import GroundTrackMap from "@/components/GroundTrackMap";
 import { saveTelemetryRecord } from "@/lib/telemetry-history";
+import CursorEffects from "@/components/CursorEffects";
 
 const EarthScene = dynamic(() => import("@/components/EarthScene"), {
   ssr: false,
@@ -101,6 +102,7 @@ function Metric({
 }
 
 export default function HomePage() {
+  
   const [iss, setIss] = useState<ISSPosition | null>(null);
   const [articles, setArticles] = useState<SpaceArticle[]>([]);
   const [issError, setIssError] = useState("");
@@ -204,6 +206,8 @@ export default function HomePage() {
 
   return (
     <main className="orbit-app">
+      <CursorEffects />
+
       <aside className="sidebar">
         <a href="#overview" className="brand">
           <span className="brand-icon">
