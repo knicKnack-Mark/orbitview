@@ -1,211 +1,156 @@
-
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
-import {
-  ComposableMap,
-  Geographies,
-  Geography,
-  Graticule,
-  Line,
-  Marker,
-  Sphere,
-} from "react-simple-maps";
-
-type GroundTrackMapProps = {
-  latitude: number | null;
-  longitude: number | null;
-  altitude: number | null;
+export type TelemetryRecord = {
+  timestamp: number;
+  latitude: number;
+  longitude: number;
+  altitude: number;
+  velocity: number;
 };
 
-type Coordinate = [number, number];
+const STORAGE_KEY = "orbitview:iss-telemetry:v1";
+const MAX_RECORDS = 20_000;
 
-const WORLD_MAP_URL =
-  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+function isTelemetryRecord(value: unknown): value is TelemetryRecord {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
 
-const MAX_TRACK_POINTS = 120;
+  const record = value as Record<string, unknown>;
 
-export default function GroundTrackMap({
-  latitude,
-  longitude,
-  altitude,
-}: GroundTrackMapProps) {
-  const [track, setTrack] = useState<Coordinate[]>([]);
+  return (
+    typeof record.timestamp === "number" &&
+    Number.isFinite(record.timestamp) &&
+    typeof record.latitude === "number" &&
+    Number.isFinite(record.latitude) &&
+    typeof record.longitude === "number" &&
+    Number.isFinite(record.longitude) &&
+    typeof record.altitude === "number" &&
+    Number.isFinite(record.altitude) &&
+    typeof record.velocity === "number" &&
+    Number.isFinite(record.velocity)
+  );
+}
 
-  useEffect(() => {
-    if (
-      latitude === null ||
-      longitude === null ||
-      !Number.isFinite(latitude) ||
-      !Number.isFinite(longitude)
-    ) {
+export function readTelemetryHistory(): TelemetryRecord[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+
+    if (!stored) {
+      return [];
+    }
+
+    const parsed: unknown = JSON.parse(stored);
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter(isTelemetryRecord)
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .slice(-MAX_RECORDS);
+  } catch {
+    return [];
+  }
+}
+
+export function saveTelemetryRecord(
+  record: TelemetryRecord
+): void {
+  if (typeof window === "undefined" || !isTelemetryRecord(record)) {
+    return;
+  }
+
+  try {
+    const history = readTelemetryHistory();
+    const lastRecord = history[history.length - 1];
+
+    // Avoid saving the same API timestamp repeatedly.
+    if (lastRecord?.timestamp === record.timestamp) {
       return;
     }
 
-    const point: Coordinate = [longitude, latitude];
+    history.push(record);
 
-    setTrack((previous) => {
-      const last = previous[previous.length - 1];
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(history.slice(-MAX_RECORDS))
+    );
+  } catch (error) {
+    console.error("Unable to save ISS telemetry history:", error);
+  }
+}
 
-      // Avoid adding duplicate coordinates between refreshes.
-      if (
-        last &&
-        Math.abs(last[0] - point[0]) < 0.0001 &&
-        Math.abs(last[1] - point[1]) < 0.0001
-      ) {
-        return previous;
-      }
+export function clearTelemetryHistory(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
 
-      return [...previous, point].slice(-MAX_TRACK_POINTS);
-    });
-  }, [latitude, longitude]);
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.error("Unable to clear ISS telemetry history:", error);
+  }
+}
 
-  // Split the track at the international date line so that
-  // the trail doesn't draw a long line across the entire map.
-  const trackSegments = useMemo(() => {
-    const segments: Coordinate[][] = [];
-    let segment: Coordinate[] = [];
+export function downloadTelemetryCSV(
+  records: TelemetryRecord[]
+): void {
+  if (typeof window === "undefined" || records.length === 0) {
+    return;
+  }
 
-    for (const point of track) {
-      const previous = segment[segment.length - 1];
+  const headers = [
+    "timestamp",
+    "date_utc",
+    "latitude",
+    "longitude",
+    "altitude_km",
+    "velocity_kmh",
+  ];
 
-      if (previous && Math.abs(point[0] - previous[0]) > 180) {
-        if (segment.length > 1) segments.push(segment);
-        segment = [];
-      }
+  const escapeCSV = (value: string | number): string => {
+    const text = String(value);
 
-      segment.push(point);
+    if (/[",\r\n]/.test(text)) {
+      return `"${text.replace(/"/g, '""')}"`;
     }
 
-    if (segment.length > 1) segments.push(segment);
+    return text;
+  };
 
-    return segments;
-  }, [track]);
+  const rows = records.map((record) => [
+    record.timestamp,
+    new Date(record.timestamp).toISOString(),
+    record.latitude,
+    record.longitude,
+    record.altitude,
+    record.velocity,
+  ]);
 
-  const hasPosition =
-    latitude !== null &&
-    longitude !== null &&
-    Number.isFinite(latitude) &&
-    Number.isFinite(longitude);
+  const csv = [
+    headers.join(","),
+    ...rows.map((row) => row.map(escapeCSV).join(",")),
+  ].join("\r\n");
 
-  return (
-    <section className="ground-track-card">
-      <div className="ground-track-header">
-        <div>
-          <div className="section-eyebrow">ORBITAL VISUALIZATION</div>
-          <h2>ISS Ground Track</h2>
-          <p>Live position and recent path over Earth</p>
-        </div>
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8;",
+  });
 
-        <div className="ground-track-badge">
-          <span className={hasPosition ? "status-dot" : "status-dot offline"} />
-          {hasPosition ? "TRACKING" : "WAITING FOR DATA"}
-        </div>
-      </div>
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
 
-      <div className="ground-track-map">
-        <ComposableMap
-          projection="geoEquirectangular"
-          projectionConfig={{ scale: 145 }}
-          width={800}
-          height={400}
-          style={{ width: "100%", height: "auto" }}
-        >
-          <Sphere
-            fill="#071521"
-            stroke="#164052"
-            strokeWidth={0.8}
-          />
+  anchor.href = url;
+  anchor.download = `orbitview-iss-telemetry-${new Date()
+    .toISOString()
+    .slice(0, 10)}.csv`;
 
-          <Graticule
-            stroke="#1b3c4c"
-            strokeWidth={0.45}
-            strokeOpacity={0.8}
-          />
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
 
-          <Geographies geography={WORLD_MAP_URL}>
-            {({ geographies }) =>
-              geographies.map((geography) => (
-                <Geography
-                  key={geography.rsmKey}
-                  geography={geography}
-                  fill="#102b3a"
-                  stroke="#285062"
-                  strokeWidth={0.45}
-                  style={{
-                    default: { outline: "none" },
-                    hover: { fill: "#164052", outline: "none" },
-                    pressed: { outline: "none" },
-                  }}
-                />
-              ))
-            }
-          </Geographies>
-
-          {trackSegments.map((segment, index) => (
-            <Line
-              key={`track-${index}`}
-              coordinates={segment}
-              stroke="#00f2fe"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          ))}
-
-          {hasPosition && (
-            <Marker coordinates={[longitude, latitude]}>
-              <circle r={11} fill="#00f2fe" opacity={0.12} />
-              <circle r={6} fill="#00f2fe" opacity={0.2} />
-              <circle
-                r={3.5}
-                fill="#ffffff"
-                stroke="#00f2fe"
-                strokeWidth={2}
-              />
-            </Marker>
-          )}
-        </ComposableMap>
-
-        {!hasPosition && (
-          <div className="ground-track-overlay">
-            Waiting for the first ISS position update…
-          </div>
-        )}
-      </div>
-
-      <div className="ground-track-footer">
-        <div className="track-legend">
-          <span className="legend-line" />
-          <span>Recent ground track</span>
-        </div>
-
-        <div className="track-coordinates">
-          {hasPosition
-            ? `${latitude.toFixed(2)}°, ${longitude.toFixed(2)}°`
-            : "Coordinates unavailable"}
-        </div>
-      </div>
-
-      <div className="ground-track-stats">
-        <div>
-          <span>LATITUDE</span>
-          <strong>{hasPosition ? `${latitude.toFixed(4)}°` : "—"}</strong>
-        </div>
-        <div>
-          <span>LONGITUDE</span>
-          <strong>{hasPosition ? `${longitude.toFixed(4)}°` : "—"}</strong>
-        </div>
-        <div>
-          <span>ALTITUDE</span>
-          <strong>
-            {altitude !== null && Number.isFinite(altitude)
-              ? `${altitude.toFixed(1)} km`
-              : "—"}
-          </strong>
-        </div>
-      </div>
-    </section>
-  );
+  URL.revokeObjectURL(url);
 }
