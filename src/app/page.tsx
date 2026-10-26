@@ -19,6 +19,8 @@ import {
   RefreshCw,
   Clock3,
 } from "lucide-react";
+import GroundTrackMap from "@/components/GroundTrackMap";
+
 
 const EarthScene = dynamic(() => import("@/components/EarthScene"), {
   ssr: false,
@@ -439,6 +441,12 @@ export default function HomePage() {
               </a>
             </aside>
           </section>
+
+          <GroundTrackMap
+            latitude={iss?.latitude ?? null}
+            longitude={iss?.longitude ?? null}
+            altitude={iss?.altitude ?? null}
+          />
 
           <section className="orbit-panel news-panel" id="news">
             <div className="panel-heading news-heading">
