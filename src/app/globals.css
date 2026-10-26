@@ -823,3 +823,102 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* ISS mission-control status */
+.tracking-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  margin: 16px 0;
+  border: 1px solid rgba(0, 242, 254, 0.18);
+  border-radius: 12px;
+  background: rgba(0, 242, 254, 0.045);
+}
+
+.tracking-status-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  color: var(--orbit-cyan, #00f2fe);
+  border: 1px solid rgba(0, 242, 254, 0.22);
+  border-radius: 10px;
+  background: rgba(0, 242, 254, 0.08);
+}
+
+.tracking-status > div:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+.tracking-status strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--orbit-text, #e8f1ff);
+}
+
+.tracking-status p {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--orbit-muted, #91a4bd);
+}
+
+.tracking-status-light {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #00f2a6;
+  box-shadow: 0 0 12px rgba(0, 242, 166, 0.7);
+  animation: tracking-pulse 1.8s ease-in-out infinite;
+}
+
+.status-dot-offline {
+  background: #ffb454 !important;
+  box-shadow: 0 0 10px rgba(255, 180, 84, 0.45);
+}
+
+.telemetry-update {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--orbit-border, rgba(255, 255, 255, 0.08));
+  font-size: 11px;
+  color: var(--orbit-muted, #91a4bd);
+}
+
+.telemetry-update svg {
+  color: var(--orbit-cyan, #00f2fe);
+}
+
+.telemetry-update strong {
+  margin-left: auto;
+  color: var(--orbit-text, #e8f1ff);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes tracking-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracking-status-light {
+    animation: none;
+  }
+}
