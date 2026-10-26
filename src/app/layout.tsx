@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OrbitView | Space & Earth Monitor",
+  title: `${process.env.NEXT_PUBLIC_APP_NAME ?? "OrbitView"} | Space & Earth Monitor`,
   description:
-    "Explore an interactive 3D Earth, track the International Space Station, and discover the latest spaceflight news.",
+    process.env.NEXT_PUBLIC_APP_DESCRIPTION ?? "Space and Earth Monitor",
 };
 
 export default function RootLayout({
