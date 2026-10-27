@@ -1,9 +1,14 @@
 
 "use client";
 
-import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import {
+  Canvas,
+  useFrame,
+  useLoader,
+  useThree,
+} from "@react-three/fiber";
 import { Line, OrbitControls } from "@react-three/drei";
-import { Suspense, useMemo, useRef } from "react";
+import { Suspense, useCallback, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 type EarthSceneProps = {
@@ -34,7 +39,14 @@ function Earth({
   latitude,
   longitude,
   altitude,
-}: EarthSceneProps) {
+  showOrbit,
+  selected,
+  onSelect,
+}: EarthSceneProps & {
+  showOrbit: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   const groupRef = useRef<THREE.Group>(null);
   const cloudRef = useRef<THREE.Mesh>(null);
   const markerRef = useRef<THREE.Group>(null);
@@ -57,8 +69,6 @@ function Earth({
   const markerPosition = useMemo(() => {
     if (!hasPosition) return new THREE.Vector3(0, 0, ORBIT_RADIUS);
 
-    // Scale the reported altitude relative to Earth's radius.
-    // The scale is intentionally exaggerated slightly for visibility.
     const height = Math.max(0, altitude ?? 400);
     const markerRadius = ORBIT_RADIUS + Math.min(height / 6371, 0.12);
 
@@ -67,10 +77,8 @@ function Earth({
 
   const orbitPoints = useMemo(() => {
     const center = markerPosition.clone().normalize();
-
-    // Build an illustrative great-circle orbit passing through the
-    // current marker. This is not a propagated ISS orbital prediction.
     const north = new THREE.Vector3(0, 1, 0);
+
     let tangent = new THREE.Vector3().crossVectors(north, center);
 
     if (tangent.lengthSq() < 0.0001) {
@@ -88,13 +96,13 @@ function Earth({
     for (let i = 0; i <= segments; i++) {
       const angle = (i / segments) * Math.PI * 2;
 
-      const point = center
-        .clone()
-        .multiplyScalar(Math.cos(angle))
-        .add(tangent.clone().multiplyScalar(Math.sin(angle)))
-        .multiplyScalar(markerPosition.length());
-
-      points.push(point);
+      points.push(
+        center
+          .clone()
+          .multiplyScalar(Math.cos(angle))
+          .add(tangent.clone().multiplyScalar(Math.sin(angle)))
+          .multiplyScalar(markerPosition.length()),
+      );
     }
 
     return points;
@@ -122,7 +130,6 @@ function Earth({
   return (
     <group>
       <group ref={groupRef}>
-        {/* Textured Earth */}
         <mesh>
           <sphereGeometry args={[EARTH_RADIUS, 96, 96]} />
           <meshStandardMaterial
@@ -134,7 +141,6 @@ function Earth({
           />
         </mesh>
 
-        {/* Night-side city lights */}
         <mesh scale={1.001}>
           <sphereGeometry args={[EARTH_RADIUS, 96, 96]} />
           <meshBasicMaterial
@@ -146,41 +152,60 @@ function Earth({
           />
         </mesh>
 
-        {/* Illustrative orbital trajectory */}
-        <Line
-          points={orbitPoints}
-          color="#00f2fe"
-          lineWidth={1.4}
-          transparent
-          opacity={0.8}
-        />
+        {showOrbit && (
+          <Line
+            points={orbitPoints}
+            color="#00f2fe"
+            lineWidth={1.4}
+            transparent
+            opacity={0.8}
+          />
+        )}
 
-        {/* ISS marker and pulsing locator */}
-        <group ref={markerRef} position={markerPosition}>
+        <group
+          ref={markerRef}
+          position={markerPosition}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect();
+          }}
+          onPointerOver={(event) => {
+            event.stopPropagation();
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerOut={() => {
+            document.body.style.cursor = "";
+          }}
+        >
+          {/* Larger invisible hit target makes the ISS easier to select. */}
+          <mesh>
+            <sphereGeometry args={[0.17, 16, 16]} />
+            <meshBasicMaterial
+              transparent
+              opacity={0}
+              depthWrite={false}
+            />
+          </mesh>
+
           <mesh>
             <sphereGeometry args={[0.055, 20, 20]} />
             <meshBasicMaterial color="#ffffff" />
           </mesh>
 
           <mesh ref={pulseRef}>
-            <sphereGeometry args={[0.105, 20, 20]} />
+            <sphereGeometry args={[selected ? 0.15 : 0.105, 20, 20]} />
             <meshBasicMaterial
-              color="#00f2fe"
+              color={selected ? "#ffffff" : "#00f2fe"}
               transparent
-              opacity={0.22}
+              opacity={selected ? 0.32 : 0.22}
               depthWrite={false}
             />
           </mesh>
 
-          <pointLight
-            color="#00f2fe"
-            intensity={1.4}
-            distance={0.7}
-          />
+          <pointLight color="#00f2fe" intensity={1.4} distance={0.7} />
         </group>
       </group>
 
-      {/* Moving cloud layer */}
       <mesh ref={cloudRef} scale={1.008}>
         <sphereGeometry args={[EARTH_RADIUS, 96, 96]} />
         <meshStandardMaterial
@@ -192,7 +217,6 @@ function Earth({
         />
       </mesh>
 
-      {/* Atmospheric glow */}
       <mesh scale={1.045}>
         <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
         <meshBasicMaterial
@@ -205,7 +229,6 @@ function Earth({
         />
       </mesh>
 
-      {/* Outer atmospheric rim */}
       <mesh scale={1.065}>
         <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
         <meshBasicMaterial
@@ -261,7 +284,33 @@ function StarField() {
   );
 }
 
-function SceneContent(props: EarthSceneProps) {
+function SceneContent({
+  latitude,
+  longitude,
+  altitude,
+  showOrbit,
+  selected,
+  onSelect,
+  resetSignal,
+}: EarthSceneProps & {
+  showOrbit: boolean;
+  selected: boolean;
+  onSelect: () => void;
+  resetSignal: number;
+}) {
+  const controlsRef = useRef<any>(null);
+  const { camera } = useThree();
+  const previousReset = useRef(resetSignal);
+
+  useFrame(() => {
+    if (previousReset.current !== resetSignal) {
+      previousReset.current = resetSignal;
+      camera.position.set(0, 0, 7);
+      controlsRef.current?.target.set(0, 0, 0);
+      controlsRef.current?.update();
+    }
+  });
+
   return (
     <>
       <color attach="background" args={["#030914"]} />
@@ -274,15 +323,26 @@ function SceneContent(props: EarthSceneProps) {
       />
 
       <StarField />
-      <Earth {...props} />
+
+      <Earth
+        latitude={latitude}
+        longitude={longitude}
+        altitude={altitude}
+        showOrbit={showOrbit}
+        selected={selected}
+        onSelect={onSelect}
+      />
 
       <OrbitControls
+        ref={controlsRef}
         enablePan={false}
         enableZoom
         minDistance={3.2}
         maxDistance={10}
         rotateSpeed={0.65}
         zoomSpeed={0.7}
+        enableDamping
+        dampingFactor={0.06}
       />
     </>
   );
@@ -298,17 +358,98 @@ function LoadingFallback() {
 }
 
 export default function EarthScene(props: EarthSceneProps) {
+  const [showOrbit, setShowOrbit] = useState(true);
+  const [selected, setSelected] = useState(false);
+  const [resetSignal, setResetSignal] = useState(0);
+
+  const resetCamera = useCallback(() => {
+    setResetSignal((value) => value + 1);
+  }, []);
+
   return (
-    <div className="earth-scene">
-      <Canvas
-        camera={{ position: [0, 0, 7], fov: 45 }}
-        dpr={[1, 1.5]}
-        gl={{ antialias: true, alpha: true }}
-      >
-        <Suspense fallback={<LoadingFallback />}>
-          <SceneContent {...props} />
-        </Suspense>
-      </Canvas>
+    <div className="earth-scene-wrap">
+      <div className="earth-scene-controls">
+        <button
+          type="button"
+          className="earth-control-button"
+          onClick={() => setShowOrbit((value) => !value)}
+        >
+          {showOrbit ? "Hide orbit" : "Show orbit"}
+        </button>
+
+        <button
+          type="button"
+          className="earth-control-button"
+          onClick={resetCamera}
+        >
+          Reset camera
+        </button>
+      </div>
+
+      <div className="earth-scene">
+        <Canvas
+          camera={{ position: [0, 0, 7], fov: 45 }}
+          dpr={[1, 1.5]}
+          gl={{ antialias: true, alpha: true }}
+        >
+          <Suspense fallback={<LoadingFallback />}>
+            <SceneContent
+              {...props}
+              showOrbit={showOrbit}
+              selected={selected}
+              onSelect={() => setSelected((value) => !value)}
+              resetSignal={resetSignal}
+            />
+          </Suspense>
+        </Canvas>
+      </div>
+
+      {selected && (
+        <div className="iss-inspection-panel">
+          <div className="iss-inspection-heading">
+            <span className="status-dot" />
+            ISS TRACKING TARGET
+            <button
+              type="button"
+              onClick={() => setSelected(false)}
+              aria-label="Close ISS inspection panel"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="iss-inspection-coordinates">
+            <span>LATITUDE</span>
+            <strong>
+              {props.latitude === null
+                ? "Waiting…"
+                : `${props.latitude.toFixed(4)}°`}
+            </strong>
+          </div>
+
+          <div className="iss-inspection-coordinates">
+            <span>LONGITUDE</span>
+            <strong>
+              {props.longitude === null
+                ? "Waiting…"
+                : `${props.longitude.toFixed(4)}°`}
+            </strong>
+          </div>
+
+          <div className="iss-inspection-coordinates">
+            <span>ALTITUDE</span>
+            <strong>
+              {props.altitude === null
+                ? "—"
+                : `${props.altitude.toFixed(1)} km`}
+            </strong>
+          </div>
+
+          <p className="iss-inspection-note">
+            Select the marker again or close this panel to dismiss.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
