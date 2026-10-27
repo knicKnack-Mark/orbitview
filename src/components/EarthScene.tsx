@@ -26,6 +26,8 @@ type EarthSceneProps = {
   altitude: number | null;
 };
 
+type CameraMode = "globe" | "follow";
+
 const EARTH_RADIUS = 2;
 const ORBIT_RADIUS = 2.14;
 
@@ -246,57 +248,63 @@ function SceneContent({
   showOrbit,
   onSelect,
   resetSignal,
+  cameraMode,
 }: EarthSceneProps & {
   showOrbit: boolean;
   onSelect: () => void;
   resetSignal: number;
+  cameraMode: CameraMode;
 }) {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
   const { camera } = useThree();
-  const resetAnimation = useRef<{
+  const cameraTransition = useRef<{
     active: boolean;
     elapsed: number;
     duration: number;
     startPosition: THREE.Vector3;
-    targetPosition: THREE.Vector3;
+    endPosition: THREE.Vector3;
     startTarget: THREE.Vector3;
-    targetLookAt: THREE.Vector3;
+    endTarget: THREE.Vector3;
   } | null>(null);
 
   useEffect(() => {
-    if (resetSignal === 0) return;
+    if (resetSignal === 0 && cameraMode === "globe") return;
 
     const controls = controlsRef.current;
 
     if (!controls) return;
 
-    resetAnimation.current = {
+    cameraTransition.current = {
       active: true,
       elapsed: 0,
-      duration: 1.2,
+      duration: 1.4,
       startPosition: camera.position.clone(),
-      targetPosition: new THREE.Vector3(0, 0, 7),
+      endPosition: new THREE.Vector3(
+        0,
+        0,
+        cameraMode === "follow" ? 4.5 : 7,
+      ),
       startTarget: controls.target.clone(),
-      targetLookAt: new THREE.Vector3(0, 0, 0),
+      endTarget: new THREE.Vector3(0, 0, 0),
     };
-  }, [resetSignal, camera]);
+  }, [cameraMode, resetSignal, camera]);
 
   useFrame((_, delta) => {
-    const animation = resetAnimation.current;
+    const transition = cameraTransition.current;
 
-    if (!animation?.active) return;
+    if (!transition?.active) return;
 
-    animation.elapsed += delta;
+    transition.elapsed += delta;
 
-    const progress = Math.min(animation.elapsed / animation.duration, 1);
-    const eased =
-      progress < 0.5
-        ? 4 * progress * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    const progress = Math.min(
+      transition.elapsed / transition.duration,
+      1,
+    );
+    const eased = progress * progress * (3 - 2 * progress);
 
     camera.position.lerpVectors(
-      animation.startPosition,
-      animation.targetPosition,
+      transition.startPosition,
+      transition.endPosition,
       eased,
     );
 
@@ -304,8 +312,8 @@ function SceneContent({
 
     if (controls) {
       controls.target.lerpVectors(
-        animation.startTarget,
-        animation.targetLookAt,
+        transition.startTarget,
+        transition.endTarget,
         eased,
       );
 
@@ -313,14 +321,14 @@ function SceneContent({
     }
 
     if (progress >= 1) {
-      camera.position.copy(animation.targetPosition);
+      camera.position.copy(transition.endPosition);
 
       if (controls) {
-        controls.target.copy(animation.targetLookAt);
+        controls.target.copy(transition.endTarget);
         controls.update();
       }
 
-      animation.active = false;
+      cameraTransition.current = null;
     }
   });
 
@@ -373,8 +381,10 @@ export default function EarthScene(props: EarthSceneProps) {
   const [showOrbit, setShowOrbit] = useState(true);
   const [selected, setSelected] = useState(false);
   const [resetSignal, setResetSignal] = useState(0);
+  const [cameraMode, setCameraMode] = useState<CameraMode>("globe");
 
   const resetCamera = useCallback(() => {
+    setCameraMode("globe");
     setResetSignal((value) => value + 1);
   }, []);
 
@@ -388,6 +398,26 @@ export default function EarthScene(props: EarthSceneProps) {
         >
           {showOrbit ? "Hide orbit" : "Show orbit"}
         </button>
+
+        <div className="orbit-camera-controls">
+          <button
+            type="button"
+            className={cameraMode === "globe" ? "active" : ""}
+            aria-pressed={cameraMode === "globe"}
+            onClick={() => setCameraMode("globe")}
+          >
+            Globe View
+          </button>
+
+          <button
+            type="button"
+            className={cameraMode === "follow" ? "active" : ""}
+            aria-pressed={cameraMode === "follow"}
+            onClick={() => setCameraMode("follow")}
+          >
+            Follow ISS
+          </button>
+        </div>
 
         <button
           type="button"
@@ -410,6 +440,7 @@ export default function EarthScene(props: EarthSceneProps) {
               showOrbit={showOrbit}
               onSelect={() => setSelected(true)}
               resetSignal={resetSignal}
+              cameraMode={cameraMode}
             />
           </Suspense>
         </Canvas>
