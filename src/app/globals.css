@@ -2066,3 +2066,261 @@ a,
     transition: none;
   }
 }
+
+
+/* OrbitView feature styles: append to src/app/globals.css */
+
+.orbit-hud {
+  width: 100%;
+  padding: 20px;
+  color: #e8f3ff;
+  background: rgba(7, 15, 29, 0.88);
+  border: 1px solid rgba(92, 176, 255, 0.22);
+  border-radius: 16px;
+  backdrop-filter: blur(18px);
+}
+
+.orbit-hud-header,
+.orbit-hud-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.orbit-hud-header h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+  letter-spacing: -0.04em;
+}
+
+.orbit-eyebrow,
+.orbit-metric-label {
+  color: #7f9bb8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.orbit-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 9px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.orbit-status.online {
+  color: #79f2c0;
+  background: rgba(39, 190, 129, 0.12);
+}
+
+.orbit-status.offline {
+  color: #ffc27d;
+  background: rgba(255, 165, 70, 0.12);
+}
+
+.orbit-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.orbit-status.online .orbit-status-dot {
+  box-shadow: 0 0 10px currentColor;
+}
+
+.orbit-hud-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.orbit-metric {
+  padding: 14px;
+  border: 1px solid rgba(133, 176, 221, 0.13);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.orbit-metric-label,
+.orbit-metric-unit {
+  display: block;
+}
+
+.orbit-metric strong {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: clamp(20px, 3vw, 27px);
+  font-variant-numeric: tabular-nums;
+}
+
+.orbit-metric-unit {
+  margin-top: 3px;
+  color: #7f9bb8;
+  font-size: 11px;
+}
+
+.orbit-hud-footer {
+  flex-wrap: wrap;
+  color: #7f9bb8;
+  font-size: 10px;
+}
+
+.ground-history {
+  padding: 20px;
+  color: #e8f3ff;
+  background: rgba(7, 15, 29, 0.88);
+  border: 1px solid rgba(92, 176, 255, 0.22);
+  border-radius: 16px;
+}
+
+.ground-history-heading,
+.ground-history-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.ground-history-heading h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.ground-history-heading > span,
+.ground-history-footer {
+  color: #7f9bb8;
+  font-size: 11px;
+}
+
+.ground-history-map {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 2 / 1;
+  margin: 20px 0 14px;
+  border: 1px solid rgba(92, 176, 255, 0.16);
+  border-radius: 10px;
+  background: #081726;
+}
+
+.ground-history-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(90, 164, 213, 0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(90, 164, 213, 0.13) 1px, transparent 1px);
+  background-size: 10% 16.666%;
+}
+
+.ground-history-map svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.ground-history-footer {
+  flex-wrap: wrap;
+}
+
+.orbit-camera-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.orbit-camera-controls button {
+  padding: 9px 13px;
+  color: #b8cee3;
+  background: rgba(7, 15, 29, 0.88);
+  border: 1px solid rgba(92, 176, 255, 0.25);
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 180ms ease, background 180ms ease,
+    border-color 180ms ease;
+}
+
+.orbit-camera-controls button:hover,
+.orbit-camera-controls button.active {
+  color: #eaf8ff;
+  background: rgba(34, 135, 196, 0.22);
+  border-color: rgba(72, 217, 255, 0.65);
+}
+
+.telemetry-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.telemetry-charts-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.telemetry-charts-header h2 {
+  margin: 4px 0 0;
+  color: #e8f3ff;
+  font-size: 22px;
+}
+
+.telemetry-charts-header > span {
+  color: #829bb5;
+  font-size: 11px;
+}
+
+.telemetry-chart-card {
+  min-width: 0;
+  padding: 16px;
+  color: #e8f3ff;
+  background: rgba(7, 15, 29, 0.88);
+  border: 1px solid rgba(92, 176, 255, 0.2);
+  border-radius: 14px;
+}
+
+.telemetry-chart-card h3 {
+  margin: 0 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.telemetry-chart {
+  width: 100%;
+  height: 220px;
+}
+
+.telemetry-chart-empty {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  color: #829bb5;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .telemetry-charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .orbit-hud {
+    padding: 14px;
+  }
+
+  .orbit-metric {
+    padding: 11px;
+  }
+}
