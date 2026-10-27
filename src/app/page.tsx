@@ -29,6 +29,7 @@ import {
 } from "@/lib/telemetry-history";
 import CursorEffects from "@/components/CursorEffects";
 import LiveTrackingHUD from "@/components/LiveTrackingHUD";
+import LiveTelemetryCharts from "@/components/LiveTelemetryCharts";
 
 
 const EarthScene = dynamic(() => import("@/components/EarthScene"), {
@@ -513,6 +514,15 @@ export default function HomePage() {
               timestamp: record.timestamp,
               latitude: record.latitude,
               longitude: record.longitude,
+            }))}
+          />
+
+          <LiveTelemetryCharts
+            records={history.map((record) => ({
+              timestamp: record.timestamp,
+              latitude: record.latitude,
+              longitude: record.longitude,
+              altitude: record.altitude,
             }))}
           />
 
