@@ -43,37 +43,24 @@ export default function LiveTelemetryCharts({
     }));
 
   const charts = [
-    {
-      title: "Altitude History",
-      key: "altitude" as const,
-      unit: " km",
-    },
-    {
-      title: "Latitude History",
-      key: "latitude" as const,
-      unit: "°",
-    },
-    {
-      title: "Longitude History",
-      key: "longitude" as const,
-      unit: "°",
-    },
+    { title: "Altitude history", key: "altitude" as const, unit: " km" },
+    { title: "Latitude history", key: "latitude" as const, unit: "°" },
+    { title: "Longitude history", key: "longitude" as const, unit: "°" },
   ];
 
   return (
-    <section className="telemetry-charts">
+    <section className="telemetry-charts" aria-labelledby="telemetry-trends-title">
       <header className="telemetry-charts-header">
         <div>
           <p className="orbit-eyebrow">FLIGHT DATA</p>
-          <h2>Telemetry Trends</h2>
+          <h2 id="telemetry-trends-title">Telemetry Trends</h2>
         </div>
-        <span>{data.length} samples</span>
+        <span>{data.length} samples · latest 100</span>
       </header>
 
       {charts.map((chart) => (
         <article className="telemetry-chart-card" key={chart.key}>
           <h3>{chart.title}</h3>
-
           <div className="telemetry-chart">
             {data.length < 2 ? (
               <p className="telemetry-chart-empty">
@@ -86,7 +73,6 @@ export default function LiveTelemetryCharts({
                     stroke="rgba(130, 170, 210, 0.13)"
                     strokeDasharray="3 5"
                   />
-
                   <XAxis
                     dataKey="time"
                     minTickGap={35}
@@ -94,15 +80,13 @@ export default function LiveTelemetryCharts({
                     axisLine={false}
                     tickLine={false}
                   />
-
                   <YAxis
-                    width={52}
+                    width={54}
                     tick={{ fill: "#829bb5", fontSize: 10 }}
                     axisLine={false}
                     tickLine={false}
                     domain={["auto", "auto"]}
                   />
-
                   <Tooltip
                     contentStyle={{
                       background: "#0b1728",
@@ -116,7 +100,6 @@ export default function LiveTelemetryCharts({
                     ]}
                     labelStyle={{ color: "#9ab5cf" }}
                   />
-
                   <Line
                     type="monotone"
                     dataKey={chart.key}
