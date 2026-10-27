@@ -1666,3 +1666,139 @@ a,
     transition: none !important;
   }
 }
+
+
+/* Interactive Earth scene controls */
+
+.earth-scene-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.earth-scene-controls {
+  position: absolute;
+  z-index: 5;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.earth-control-button {
+  padding: 8px 11px;
+  color: #c7faff;
+  background: rgba(3, 15, 29, 0.88);
+  border: 1px solid rgba(0, 242, 254, 0.28);
+  border-radius: 8px;
+  font-size: 11px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.earth-control-button:hover {
+  background: rgba(0, 135, 170, 0.3);
+  border-color: #00f2fe;
+  transform: translateY(-1px);
+}
+
+.iss-inspection-panel {
+  position: absolute;
+  z-index: 5;
+  bottom: 14px;
+  left: 14px;
+  width: min(260px, calc(100% - 28px));
+  padding: 14px;
+  color: #eafaff;
+  background: rgba(3, 12, 25, 0.94);
+  border: 1px solid rgba(0, 242, 254, 0.32);
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
+  animation: iss-panel-enter 220ms ease-out both;
+}
+
+.iss-inspection-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 14px;
+  color: #00f2fe;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.iss-inspection-heading button {
+  margin-left: auto;
+  color: #d8faff;
+  background: transparent;
+  border: 0;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.iss-inspection-coordinates {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(160, 210, 255, 0.1);
+}
+
+.iss-inspection-coordinates span {
+  color: #8198ad;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.iss-inspection-coordinates strong {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.iss-inspection-note {
+  margin: 10px 0 0;
+  color: #8198ad;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+@keyframes iss-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 560px) {
+  .earth-scene-controls {
+    top: 8px;
+    right: 8px;
+  }
+
+  .earth-control-button {
+    padding: 7px 9px;
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iss-inspection-panel {
+    animation: none;
+  }
+
+  .earth-control-button {
+    transition: none;
+  }
+}
