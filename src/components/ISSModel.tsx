@@ -12,11 +12,11 @@ type ISSModelProps = {
 
 function SolarArray({ side }: { side: -1 | 1 }) {
   const panelMaterial = new THREE.MeshStandardMaterial({
-    color: "#245c91",
-    emissive: "#123b68",
-    emissiveIntensity: 0.35,
-    metalness: 0.55,
-    roughness: 0.4,
+    color: "#397bb5",
+    emissive: "#174a80",
+    emissiveIntensity: 0.65,
+    metalness: 0.35,
+    roughness: 0.38,
     side: THREE.DoubleSide,
   });
 
@@ -83,14 +83,18 @@ export default function ISSModel({
   const rotationRef = useRef<THREE.Group>(null);
 
   const hullMaterial = new THREE.MeshStandardMaterial({
-    color: "#dce5eb",
-    metalness: 0.8,
+    color: "#edf5ff",
+    emissive: "#26384a",
+    emissiveIntensity: 0.25,
+    metalness: 0.55,
     roughness: 0.3,
   });
 
   const goldMaterial = new THREE.MeshStandardMaterial({
-    color: "#d6a85c",
-    metalness: 0.72,
+    color: "#f3c878",
+    emissive: "#80521b",
+    emissiveIntensity: 0.3,
+    metalness: 0.5,
     roughness: 0.3,
   });
 
@@ -120,6 +124,36 @@ export default function ISSModel({
       </mesh>
 
       <group ref={rotationRef}>
+        {/* Soft illumination for the station */}
+        <ambientLight intensity={1.8} />
+
+        {/* Cool white key light */}
+        <pointLight
+          color="#d9efff"
+          intensity={22}
+          distance={12}
+          decay={2}
+          position={[2, 3, 4]}
+        />
+
+        {/* Blue fill light for the solar panels */}
+        <pointLight
+          color="#4da6ff"
+          intensity={10}
+          distance={8}
+          decay={2}
+          position={[-3, 1, -2]}
+        />
+
+        {/* Warm reflected light on the modules */}
+        <pointLight
+          color="#ffd89b"
+          intensity={5}
+          distance={5}
+          decay={2}
+          position={[0, -1, 2]}
+        />
+
         {/* Main truss */}
         <mesh material={hullMaterial}>
           <boxGeometry args={[4.5, 0.09, 0.1]} />
