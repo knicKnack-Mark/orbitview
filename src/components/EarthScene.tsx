@@ -52,9 +52,11 @@ function Earth({
   altitude,
   showOrbit,
   onSelect,
+  onMarkerWorldPosition,
 }: EarthSceneProps & {
   showOrbit: boolean;
   onSelect: () => void;
+  onMarkerWorldPosition: (position: THREE.Vector3) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const cloudRef = useRef<THREE.Mesh>(null);
@@ -118,6 +120,11 @@ function Earth({
   useFrame((_, delta) => {
     if (groupRef.current) {
       groupRef.current.rotation.y += delta * 0.025;
+
+      // Publish the ISS marker's true world position after Earth's rotation.
+      const worldPosition = markerPosition.clone();
+      groupRef.current.localToWorld(worldPosition);
+      onMarkerWorldPosition(worldPosition);
     }
 
     if (cloudRef.current) {
@@ -257,6 +264,14 @@ function SceneContent({
 }) {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
   const { camera } = useThree();
+  const followPosition = useRef<THREE.Vector3 | null>(null);
+  const handleMarkerWorldPosition = useCallback((position: THREE.Vector3) => {
+    if (!followPosition.current) {
+      followPosition.current = position.clone();
+    } else {
+      followPosition.current.copy(position);
+    }
+  }, []);
   const cameraTransition = useRef<{
     active: boolean;
     elapsed: number;
@@ -268,10 +283,16 @@ function SceneContent({
   } | null>(null);
 
   useEffect(() => {
+    // Follow mode is handled continuously in useFrame so the camera can
+    // follow the ISS as Earth rotates and new coordinates arrive.
+    if (cameraMode === "follow") {
+      cameraTransition.current = null;
+      return;
+    }
+
     if (resetSignal === 0 && cameraMode === "globe") return;
 
     const controls = controlsRef.current;
-
     if (!controls) return;
 
     cameraTransition.current = {
@@ -279,19 +300,31 @@ function SceneContent({
       elapsed: 0,
       duration: 1.4,
       startPosition: camera.position.clone(),
-      endPosition: new THREE.Vector3(
-        0,
-        0,
-        cameraMode === "follow" ? 4.5 : 7,
-      ),
+      endPosition: new THREE.Vector3(0, 0, 7),
       startTarget: controls.target.clone(),
       endTarget: new THREE.Vector3(0, 0, 0),
     };
   }, [cameraMode, resetSignal, camera]);
 
   useFrame((_, delta) => {
-    const transition = cameraTransition.current;
+    const controls = controlsRef.current;
 
+    if (cameraMode === "follow" && followPosition.current && controls) {
+      const target = followPosition.current;
+      const outward = target.clone().normalize();
+      const desiredPosition = target
+        .clone()
+        .add(outward.multiplyScalar(1.55))
+        .add(new THREE.Vector3(0, 0.22, 0));
+      const smoothing = 1 - Math.exp(-delta * 2.8);
+
+      controls.target.lerp(target, smoothing);
+      camera.position.lerp(desiredPosition, smoothing);
+      controls.update();
+      return;
+    }
+
+    const transition = cameraTransition.current;
     if (!transition?.active) return;
 
     transition.elapsed += delta;
@@ -351,6 +384,7 @@ function SceneContent({
         altitude={altitude}
         showOrbit={showOrbit}
         onSelect={onSelect}
+        onMarkerWorldPosition={handleMarkerWorldPosition}
       />
 
       <OrbitControls
