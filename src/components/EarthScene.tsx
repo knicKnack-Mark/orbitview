@@ -8,7 +8,15 @@ import {
   useThree,
 } from "@react-three/fiber";
 import { Line, OrbitControls } from "@react-three/drei";
-import { Suspense, useCallback, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  type ComponentRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as THREE from "three";
 
 type EarthSceneProps = {
@@ -298,16 +306,76 @@ function SceneContent({
   onSelect: () => void;
   resetSignal: number;
 }) {
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
   const { camera } = useThree();
-  const previousReset = useRef(resetSignal);
+  const resetAnimation = useRef<{
+    active: boolean;
+    elapsed: number;
+    duration: number;
+    startPosition: THREE.Vector3;
+    targetPosition: THREE.Vector3;
+    startTarget: THREE.Vector3;
+    targetLookAt: THREE.Vector3;
+  } | null>(null);
 
-  useFrame(() => {
-    if (previousReset.current !== resetSignal) {
-      previousReset.current = resetSignal;
-      camera.position.set(0, 0, 7);
-      controlsRef.current?.target.set(0, 0, 0);
-      controlsRef.current?.update();
+  useEffect(() => {
+    if (resetSignal === 0) return;
+
+    const controls = controlsRef.current;
+
+    if (!controls) return;
+
+    resetAnimation.current = {
+      active: true,
+      elapsed: 0,
+      duration: 1.2,
+      startPosition: camera.position.clone(),
+      targetPosition: new THREE.Vector3(0, 0, 7),
+      startTarget: controls.target.clone(),
+      targetLookAt: new THREE.Vector3(0, 0, 0),
+    };
+  }, [resetSignal, camera]);
+
+  useFrame((_, delta) => {
+    const animation = resetAnimation.current;
+
+    if (!animation?.active) return;
+
+    animation.elapsed += delta;
+
+    const progress = Math.min(animation.elapsed / animation.duration, 1);
+    const eased =
+      progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+    camera.position.lerpVectors(
+      animation.startPosition,
+      animation.targetPosition,
+      eased,
+    );
+
+    const controls = controlsRef.current;
+
+    if (controls) {
+      controls.target.lerpVectors(
+        animation.startTarget,
+        animation.targetLookAt,
+        eased,
+      );
+
+      controls.update();
+    }
+
+    if (progress >= 1) {
+      camera.position.copy(animation.targetPosition);
+
+      if (controls) {
+        controls.target.copy(animation.targetLookAt);
+        controls.update();
+      }
+
+      animation.active = false;
     }
   });
 
