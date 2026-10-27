@@ -21,8 +21,15 @@ import {
   Clock3,
 } from "lucide-react";
 import GroundTrackMap from "@/components/GroundTrackMap";
-import { saveTelemetryRecord } from "@/lib/telemetry-history";
+import GroundTrackHistory from "@/components/GroundTrackHistory";
+import {
+  readTelemetryHistory,
+  saveTelemetryRecord,
+  type TelemetryRecord,
+} from "@/lib/telemetry-history";
 import CursorEffects from "@/components/CursorEffects";
+import LiveTrackingHUD from "@/components/LiveTrackingHUD";
+
 
 const EarthScene = dynamic(() => import("@/components/EarthScene"), {
   ssr: false,
@@ -109,6 +116,7 @@ export default function HomePage() {
   const [newsError, setNewsError] = useState("");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [history, setHistory] = useState<TelemetryRecord[]>([]);
 
   async function fetchISS() {
     try {
@@ -179,6 +187,14 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setHistory(readTelemetryHistory());
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
     if (!iss) return;
 
     const timestamp = Number(iss.timestamp);
@@ -200,6 +216,12 @@ export default function HomePage() {
       altitude: iss.altitude,
       velocity: iss.velocity,
     });
+
+    const frame = window.requestAnimationFrame(() => {
+      setHistory(readTelemetryHistory());
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [iss]);
 
   const isLive = Boolean(iss && !issError);
@@ -353,6 +375,12 @@ export default function HomePage() {
             </div>
           </section>
 
+          <LiveTrackingHUD
+            iss={iss}
+            connected={isLive}
+            lastUpdated={lastUpdated?.getTime() ?? null}
+          />
+
           <section className="earth-layout" id="earth">
             <div className="orbit-panel earth-panel">
               <div className="panel-heading">
@@ -478,6 +506,14 @@ export default function HomePage() {
             latitude={iss?.latitude ?? null}
             longitude={iss?.longitude ?? null}
             altitude={iss?.altitude ?? null}
+          />
+
+          <GroundTrackHistory
+            points={history.map((record) => ({
+              timestamp: record.timestamp,
+              latitude: record.latitude,
+              longitude: record.longitude,
+            }))}
           />
 
           <section className="orbit-panel news-panel" id="news">
