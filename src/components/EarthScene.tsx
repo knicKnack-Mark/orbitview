@@ -18,6 +18,7 @@ import {
   useState,
 } from "react";
 import * as THREE from "three";
+import ISSModel from "@/components/ISSModel";
 
 type EarthSceneProps = {
   latitude: number | null;
@@ -48,17 +49,13 @@ function Earth({
   longitude,
   altitude,
   showOrbit,
-  selected,
   onSelect,
 }: EarthSceneProps & {
   showOrbit: boolean;
-  selected: boolean;
   onSelect: () => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const cloudRef = useRef<THREE.Mesh>(null);
-  const markerRef = useRef<THREE.Group>(null);
-  const pulseRef = useRef<THREE.Mesh>(null);
 
   const [earthTexture, normalTexture, cloudTexture, lightsTexture] =
     useLoader(THREE.TextureLoader, [
@@ -116,22 +113,13 @@ function Earth({
     return points;
   }, [markerPosition]);
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (groupRef.current) {
       groupRef.current.rotation.y += delta * 0.025;
     }
 
     if (cloudRef.current) {
       cloudRef.current.rotation.y += delta * 0.008;
-    }
-
-    if (markerRef.current) {
-      markerRef.current.position.copy(markerPosition);
-    }
-
-    if (pulseRef.current) {
-      const pulse = 1 + Math.sin(state.clock.elapsedTime * 3.5) * 0.22;
-      pulseRef.current.scale.setScalar(pulse);
     }
   });
 
@@ -170,48 +158,7 @@ function Earth({
           />
         )}
 
-        <group
-          ref={markerRef}
-          position={markerPosition}
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelect();
-          }}
-          onPointerOver={(event) => {
-            event.stopPropagation();
-            document.body.style.cursor = "pointer";
-          }}
-          onPointerOut={() => {
-            document.body.style.cursor = "";
-          }}
-        >
-          {/* Larger invisible hit target makes the ISS easier to select. */}
-          <mesh>
-            <sphereGeometry args={[0.17, 16, 16]} />
-            <meshBasicMaterial
-              transparent
-              opacity={0}
-              depthWrite={false}
-            />
-          </mesh>
-
-          <mesh>
-            <sphereGeometry args={[0.055, 20, 20]} />
-            <meshBasicMaterial color="#ffffff" />
-          </mesh>
-
-          <mesh ref={pulseRef}>
-            <sphereGeometry args={[selected ? 0.15 : 0.105, 20, 20]} />
-            <meshBasicMaterial
-              color={selected ? "#ffffff" : "#00f2fe"}
-              transparent
-              opacity={selected ? 0.32 : 0.22}
-              depthWrite={false}
-            />
-          </mesh>
-
-          <pointLight color="#00f2fe" intensity={1.4} distance={0.7} />
-        </group>
+        <ISSModel position={markerPosition} onClick={onSelect} />
       </group>
 
       <mesh ref={cloudRef} scale={1.008}>
@@ -297,12 +244,10 @@ function SceneContent({
   longitude,
   altitude,
   showOrbit,
-  selected,
   onSelect,
   resetSignal,
 }: EarthSceneProps & {
   showOrbit: boolean;
-  selected: boolean;
   onSelect: () => void;
   resetSignal: number;
 }) {
@@ -397,7 +342,6 @@ function SceneContent({
         longitude={longitude}
         altitude={altitude}
         showOrbit={showOrbit}
-        selected={selected}
         onSelect={onSelect}
       />
 
@@ -464,8 +408,7 @@ export default function EarthScene(props: EarthSceneProps) {
             <SceneContent
               {...props}
               showOrbit={showOrbit}
-              selected={selected}
-              onSelect={() => setSelected((value) => !value)}
+              onSelect={() => setSelected(true)}
               resetSignal={resetSignal}
             />
           </Suspense>
