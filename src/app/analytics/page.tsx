@@ -19,6 +19,7 @@ import {
   readTelemetryHistory,
   type TelemetryRecord,
 } from "@/lib/telemetry-history";
+import LiveTelemetryCharts from "@/components/LiveTelemetryCharts";
 
 function formatTime(timestamp: number) {
   return new Date(timestamp).toLocaleTimeString([], {
@@ -414,6 +415,15 @@ export default function AnalyticsPage() {
                 </section>
               </>
             )}
+
+            <LiveTelemetryCharts
+              records={filteredRecords.map((record) => ({
+                timestamp: record.timestamp,
+                latitude: record.latitude,
+                longitude: record.longitude,
+                altitude: record.altitude,
+              }))}
+            />
 
             <footer className="analytics-footer">
               <span>ORBITVIEW TELEMETRY ARCHIVE</span>
