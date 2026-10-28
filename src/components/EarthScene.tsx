@@ -24,6 +24,7 @@ type EarthSceneProps = {
   latitude: number | null;
   longitude: number | null;
   altitude: number | null;
+  onReady?: () => void;
 };
 
 type CameraMode = "globe" | "follow";
@@ -252,6 +253,7 @@ function SceneContent({
   latitude,
   longitude,
   altitude,
+  onReady,
   showOrbit,
   onSelect,
   resetSignal,
@@ -281,6 +283,10 @@ function SceneContent({
     startTarget: THREE.Vector3;
     endTarget: THREE.Vector3;
   } | null>(null);
+
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
 
   useEffect(() => {
     // Follow mode is handled continuously in useFrame so the camera can
@@ -410,7 +416,10 @@ function LoadingFallback() {
   );
 }
 
-export default function EarthScene(props: EarthSceneProps) {
+export default function EarthScene({
+  onReady,
+  ...props
+}: EarthSceneProps) {
   const [showOrbit, setShowOrbit] = useState(true);
   const [selected, setSelected] = useState(false);
   const [resetSignal, setResetSignal] = useState(0);
@@ -470,6 +479,7 @@ export default function EarthScene(props: EarthSceneProps) {
           <Suspense fallback={<LoadingFallback />}>
             <SceneContent
               {...props}
+              onReady={onReady}
               showOrbit={showOrbit}
               onSelect={() => setSelected(true)}
               resetSignal={resetSignal}
