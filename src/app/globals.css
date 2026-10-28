@@ -2362,3 +2362,29 @@ a,
 .mission-disclaimer{display:flex;align-items:flex-start;gap:8px;padding:11px;margin-top:18px;border-radius:9px;background:rgba(255,183,94,.055);border:1px solid rgba(255,183,94,.13);font-size:10px;line-height:1.6;color:#c2a77f}.mission-disclaimer svg{flex-shrink:0;margin-top:1px;color:#ffbf69}
 @media(max-width:1000px){.mission-control-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mission-alert-card{grid-column:1/-1}.mission-control-lower{grid-template-columns:1fr}}
 @media(max-width:620px){.mission-control-grid{grid-template-columns:1fr}.mission-alert-card{grid-column:auto}.mission-control-card{padding:15px}.mission-control-heading{align-items:flex-start}.mission-status-pill{white-space:normal}.replay-speed{margin-left:0}}
+/* OrbitView reliability, pass forecast, export and responsive polish */
+.ov-pass-panel, .ov-export-panel { margin-top: 28px; padding: 24px; min-width: 0; }
+.ov-pass-location-label { display:flex; align-items:center; gap:8px; color:var(--muted, #8fa9c4); font-size:12px; margin:18px 0 12px; }
+.ov-pass-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.ov-pass-form label { display:flex; flex-direction:column; gap:7px; color:var(--muted, #8fa9c4); font-size:12px; }
+.ov-pass-form input { width:100%; min-width:0; box-sizing:border-box; border:1px solid rgba(105,158,196,.24); border-radius:9px; padding:11px 12px; color:var(--foreground, #eaf5ff); background:rgba(3,15,28,.7); font:inherit; }
+.ov-pass-form input:focus { outline:2px solid rgba(59,211,239,.65); outline-offset:1px; }
+.ov-pass-actions, .ov-export-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+.ov-action-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:40px; border:1px solid rgba(105,158,196,.26); border-radius:9px; padding:10px 14px; color:var(--foreground, #eaf5ff); background:rgba(12,31,48,.85); cursor:pointer; font:inherit; font-size:13px; transition:background .2s ease,border-color .2s ease,transform .2s ease; }
+.ov-action-button:hover:not(:disabled) { background:rgba(24,65,86,.9); border-color:rgba(57,213,239,.55); transform:translateY(-1px); }
+.ov-action-button.primary { color:#06131e; background:#43d5ed; border-color:#43d5ed; font-weight:700; }
+.ov-action-button:disabled { opacity:.45; cursor:not-allowed; }
+.ov-pass-message { display:flex; align-items:flex-start; gap:9px; margin-top:16px; padding:12px; border:1px solid rgba(244,173,84,.25); border-radius:9px; color:#f4c17f; background:rgba(116,70,22,.12); font-size:12px; line-height:1.6; }
+.ov-pass-results { margin-top:20px; }
+.ov-pass-results-title { margin-bottom:10px; color:#49d7ef; font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+.ov-pass-result { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; padding:14px 0; border-top:1px solid rgba(105,158,196,.16); }
+.ov-pass-result div { display:flex; flex-direction:column; gap:5px; min-width:0; }
+.ov-pass-result span { color:var(--muted, #8fa9c4); font-size:10px; letter-spacing:.1em; }
+.ov-pass-result strong { color:var(--foreground, #eaf5ff); font-size:14px; overflow-wrap:anywhere; }
+.ov-pass-result small, .ov-muted { color:var(--muted, #8fa9c4); font-size:11px; line-height:1.6; }
+.ov-pass-disclaimer { margin-top:14px; padding:12px 14px; border-radius:9px; color:#d6b37c; background:rgba(143,91,27,.12); border:1px solid rgba(221,165,84,.15); font-size:11px; line-height:1.65; }
+.ov-export-panel .panel-heading { margin-bottom:8px; }
+.ov-export-actions { margin-top:14px; }
+@media (max-width: 900px) { .ov-pass-panel,.ov-export-panel { padding:18px; } }
+@media (max-width: 560px) { .ov-pass-form,.ov-pass-result { grid-template-columns:minmax(0,1fr); } .ov-pass-actions,.ov-export-actions { flex-direction:column; } .ov-action-button { width:100%; } }
+@media (prefers-reduced-motion: reduce) { .ov-action-button { transition:none; } .ov-action-button:hover:not(:disabled) { transform:none; } }
