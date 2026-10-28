@@ -341,24 +341,24 @@ function SceneContent({
       eased,
     );
 
-    const controls = controlsRef.current;
+    const orbitControls = controlsRef.current;
 
-    if (controls) {
-      controls.target.lerpVectors(
+    if (orbitControls) {
+      orbitControls.target.lerpVectors(
         transition.startTarget,
         transition.endTarget,
         eased,
       );
 
-      controls.update();
+      orbitControls.update();
     }
 
     if (progress >= 1) {
       camera.position.copy(transition.endPosition);
 
-      if (controls) {
-        controls.target.copy(transition.endTarget);
-        controls.update();
+      if (orbitControls) {
+        orbitControls.target.copy(transition.endTarget);
+        orbitControls.update();
       }
 
       cameraTransition.current = null;
