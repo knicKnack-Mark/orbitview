@@ -3,7 +3,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Activity,
   Globe2,
@@ -33,13 +33,14 @@ import LiveTelemetryCharts from "@/components/LiveTelemetryCharts";
 import MissionControlCenter from "@/components/MissionControlCenter";
 import SatellitePassForecast from "@/components/SatellitePassForecast";
 import TelemetryExport from "@/components/TelemetryExport";
-
+import OrbitViewLoader from "@/components/OrbitViewLoader";
+import SectionNavigation from "@/components/SectionNavigation";
 
 const EarthScene = dynamic(() => import("@/components/EarthScene"), {
   ssr: false,
   loading: () => (
     <div className="earth-loading">
-      <Globe2 size={36} />
+      <span className="orbit-inline-loader__spinner" aria-hidden="true" />
       <p>INITIALIZING WEBGL EARTH...</p>
     </div>
   ),
@@ -116,6 +117,11 @@ export default function HomePage() {
   
   const [iss, setIss] = useState<ISSPosition | null>(null);
   const [articles, setArticles] = useState<SpaceArticle[]>([]);
+  const [issReady, setIssReady] = useState(false);
+  const [newsReady, setNewsReady] = useState(false);
+  const [earthReady, setEarthReady] = useState(false);
+  const [issLoading, setIssLoading] = useState(true);
+  const [newsLoading, setNewsLoading] = useState(true);
   const [issError, setIssError] = useState("");
   const [newsError, setNewsError] = useState("");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -123,6 +129,8 @@ export default function HomePage() {
   const [history, setHistory] = useState<TelemetryRecord[]>([]);
   const [replayPosition, setReplayPosition] = useState<ISSPosition | null>(null);
   const scenePosition = replayPosition ?? iss;
+  const pageReady = issReady && newsReady && earthReady;
+  const handleEarthReady = useCallback(() => setEarthReady(true), []);
 
   async function fetchISS() {
     try {
@@ -148,6 +156,9 @@ export default function HomePage() {
       setLastUpdated(new Date());
     } catch {
       setIssError("Unable to load live ISS telemetry. Retrying shortly.");
+    } finally {
+      setIssLoading(false);
+      setIssReady(true);
     }
   }
 
@@ -170,6 +181,9 @@ export default function HomePage() {
       setNewsError("");
     } catch {
       setNewsError("Space news is temporarily unavailable.");
+    } finally {
+      setNewsLoading(false);
+      setNewsReady(true);
     }
   }
 
@@ -243,6 +257,8 @@ export default function HomePage() {
 
   return (
     <main className="orbit-app">
+      <OrbitViewLoader isReady={pageReady} />
+      <SectionNavigation />
       <CursorEffects />
 
       <aside className="sidebar">
@@ -259,14 +275,14 @@ export default function HomePage() {
         <div className="sidebar-caption">MISSION CONTROL</div>
 
         <nav className="sidebar-nav">
-          <a className="nav-item active" href="#overview">
+          <a className="nav-item" href="#overview">
             <Home size={18} /> Overview
-          </a>
-          <a className="nav-item" href="#earth">
-            <Globe2 size={18} /> 3D Earth
           </a>
           <a className="nav-item" href="#telemetry">
             <Satellite size={18} /> ISS Tracker
+          </a>
+          <a className="nav-item" href="#earth">
+            <Globe2 size={18} /> 3D Earth
           </a>
           <a className="nav-item" href="#news">
             <Newspaper size={18} /> Space News
@@ -412,6 +428,7 @@ export default function HomePage() {
                 latitude={scenePosition?.latitude ?? null}
                 longitude={scenePosition?.longitude ?? null}
                 altitude={scenePosition?.altitude ?? null}
+                onReady={handleEarthReady}
               />
 
               <div className="earth-footer">
@@ -463,26 +480,33 @@ export default function HomePage() {
                 <div className="api-message error-message">{issError}</div>
               )}
 
-              <div className="telemetry-list">
-                <Metric
-                  label="Latitude"
-                  value={iss ? `${iss.latitude.toFixed(4)}°` : "Loading"}
-                />
-                <Metric
-                  label="Longitude"
-                  value={iss ? `${iss.longitude.toFixed(4)}°` : "Loading"}
-                />
-                <Metric
-                  label="Altitude"
-                  value={iss ? iss.altitude.toFixed(1) : "—"}
-                  unit=" km"
-                />
-                <Metric
-                  label="Velocity"
-                  value={iss ? Math.round(iss.velocity).toLocaleString() : "—"}
-                  unit=" km/h"
-                />
-              </div>
+              {issLoading ? (
+                <div className="orbit-inline-loader">
+                  <span className="orbit-inline-loader__spinner" />
+                  <span>ACQUIRING LIVE ISS TELEMETRY...</span>
+                </div>
+              ) : (
+                <div className="telemetry-list">
+                  <Metric
+                    label="Latitude"
+                    value={iss ? `${iss.latitude.toFixed(4)}°` : "—"}
+                  />
+                  <Metric
+                    label="Longitude"
+                    value={iss ? `${iss.longitude.toFixed(4)}°` : "—"}
+                  />
+                  <Metric
+                    label="Altitude"
+                    value={iss ? iss.altitude.toFixed(1) : "—"}
+                    unit=" km"
+                  />
+                  <Metric
+                    label="Velocity"
+                    value={iss ? Math.round(iss.velocity).toLocaleString() : "—"}
+                    unit=" km/h"
+                  />
+                </div>
+              )}
 
               <div className="coordinates-box">
                 <span className="orbit-label">CURRENT COORDINATES</span>
@@ -567,11 +591,19 @@ export default function HomePage() {
               <div className="api-message error-message">{newsError}</div>
             )}
 
-            {!articles.length && !newsError && (
-              <div className="news-empty">
-                Loading latest space articles...
+            {newsLoading ? (
+              <div
+                className="space-news-loading"
+                role="status"
+                aria-label="Loading space news"
+              >
+                <div className="orbit-skeleton" />
+                <div className="orbit-skeleton" />
+                <div className="orbit-skeleton" />
               </div>
-            )}
+            ) : !articles.length && !newsError ? (
+              <div className="news-empty">No recent space articles are available.</div>
+            ) : null}
 
             <div className="news-grid">
               {articles.map((article) => (
