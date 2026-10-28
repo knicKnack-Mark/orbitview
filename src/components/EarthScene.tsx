@@ -341,7 +341,6 @@ function SceneContent({
       eased,
     );
 
-    const controls = controlsRef.current;
 
     if (controls) {
       controls.target.lerpVectors(
