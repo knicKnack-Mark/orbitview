@@ -31,6 +31,8 @@ import CursorEffects from "@/components/CursorEffects";
 import LiveTrackingHUD from "@/components/LiveTrackingHUD";
 import LiveTelemetryCharts from "@/components/LiveTelemetryCharts";
 import MissionControlCenter from "@/components/MissionControlCenter";
+import SatellitePassForecast from "@/components/SatellitePassForecast";
+import TelemetryExport from "@/components/TelemetryExport";
 
 
 const EarthScene = dynamic(() => import("@/components/EarthScene"), {
@@ -130,9 +132,18 @@ export default function HomePage() {
         throw new Error("ISS service is temporarily unavailable.");
       }
 
-      const data: ISSPosition = await response.json();
+      const data: unknown = await response.json();
+      if (!data || typeof data !== "object") {
+        throw new Error("ISS service returned invalid telemetry.");
+      }
+      const candidate = data as Partial<ISSPosition>;
+      const values = [candidate.latitude, candidate.longitude, candidate.altitude, candidate.velocity, candidate.timestamp];
+      if (!values.every((value) => typeof value === "number" && Number.isFinite(value))) {
+        throw new Error("ISS service returned incomplete telemetry.");
+      }
+      const normalized: ISSPosition = candidate as ISSPosition;
 
-      setIss(data);
+      setIss(normalized);
       setIssError("");
       setLastUpdated(new Date());
     } catch {
@@ -514,6 +525,8 @@ export default function HomePage() {
             onReplayPosition={setReplayPosition}
           />
 
+          <SatellitePassForecast />
+
           <GroundTrackMap
             latitude={iss?.latitude ?? null}
             longitude={iss?.longitude ?? null}
@@ -536,6 +549,8 @@ export default function HomePage() {
               altitude: record.altitude,
             }))}
           />
+
+          <TelemetryExport records={history} />
 
           <section className="orbit-panel news-panel" id="news">
             <div className="panel-heading news-heading">
