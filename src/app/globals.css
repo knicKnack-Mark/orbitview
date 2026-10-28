@@ -573,6 +573,16 @@ body {
   gap: 12px;
 }
 
+.space-news-loading {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.space-news-loading .orbit-skeleton {
+  min-height: 126px;
+}
+
 .news-card {
   display: flex;
   gap: 14px;
@@ -800,6 +810,10 @@ body {
   }
 
   .news-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .space-news-loading {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -2388,3 +2402,352 @@ a,
 @media (max-width: 900px) { .ov-pass-panel,.ov-export-panel { padding:18px; } }
 @media (max-width: 560px) { .ov-pass-form,.ov-pass-result { grid-template-columns:minmax(0,1fr); } .ov-pass-actions,.ov-export-actions { flex-direction:column; } .ov-action-button { width:100%; } }
 @media (prefers-reduced-motion: reduce) { .ov-action-button { transition:none; } .ov-action-button:hover:not(:disabled) { transform:none; } }
+
+
+/* =========================================
+   ORBITVIEW — STARTUP LOADER
+========================================= */
+
+.orbit-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: #eafaff;
+  background: #050811;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 650ms ease,
+    visibility 650ms ease;
+}
+
+.orbit-loader--exit {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.orbit-loader__grid {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0, 242, 254, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 242, 254, 0.055) 1px, transparent 1px);
+  background-size: 52px 52px;
+  transform: perspective(700px) rotateX(58deg) scale(1.5);
+  transform-origin: center;
+  mask-image: linear-gradient(transparent, black 35%, transparent 90%);
+  animation: orbit-loader-grid 18s linear infinite;
+}
+
+.orbit-loader__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(390px, calc(100vw - 40px));
+  flex-direction: column;
+  align-items: center;
+}
+
+.orbit-loader__visual {
+  position: relative;
+  display: grid;
+  width: 190px;
+  height: 190px;
+  margin-bottom: 24px;
+  place-items: center;
+}
+
+.orbit-loader__planet {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 242, 254, 0.8);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 28%, #6af8ff 0%, #078aa8 22%, #06304c 58%, #020b18 100%);
+  box-shadow:
+    0 0 24px rgba(0, 242, 254, 0.32),
+    inset -12px -7px 20px rgba(0, 0, 0, 0.6);
+  animation: orbit-loader-pulse 3s ease-in-out infinite;
+}
+
+.orbit-loader__planet span {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 9px,
+    rgba(0, 242, 254, 0.28) 10px,
+    transparent 11px 16px
+  );
+}
+
+.orbit-loader__orbit {
+  position: absolute;
+  width: 155px;
+  height: 65px;
+  border: 1px solid rgba(0, 242, 254, 0.65);
+  border-radius: 50%;
+}
+
+.orbit-loader__orbit--one {
+  transform: rotate(-32deg);
+  animation: orbit-loader-spin 5s linear infinite;
+}
+
+.orbit-loader__orbit--two {
+  width: 178px;
+  height: 88px;
+  border-color: rgba(88, 166, 255, 0.4);
+  transform: rotate(55deg);
+  animation: orbit-loader-spin-reverse 8s linear infinite;
+}
+
+.orbit-loader__satellite {
+  position: absolute;
+  top: 31px;
+  right: 29px;
+  display: flex;
+  width: 17px;
+  height: 8px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #b6ffff;
+  background: #00f2fe;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.8);
+  transform: rotate(-25deg);
+}
+
+.orbit-loader__satellite span {
+  position: absolute;
+  width: 9px;
+  height: 15px;
+  border: 1px solid rgba(0, 242, 254, 0.8);
+  background: rgba(0, 125, 180, 0.45);
+}
+
+.orbit-loader__satellite span:first-child {
+  right: 100%;
+}
+
+.orbit-loader__satellite span:last-child {
+  left: 100%;
+}
+
+.orbit-loader__eyebrow,
+.orbit-loader__status,
+.orbit-loader__metadata,
+.orbit-loader__footer {
+  font-family: var(--font-mono, "IBM Plex Mono", monospace);
+}
+
+.orbit-loader__eyebrow {
+  margin: 0 0 10px;
+  color: #6d9cae;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-align: center;
+}
+
+.orbit-loader__title {
+  margin: 0;
+  font-size: clamp(32px, 8vw, 48px);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.orbit-loader__title span {
+  color: #00f2fe;
+}
+
+.orbit-loader__status {
+  margin: 13px 0 30px;
+  color: #88a8b8;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-align: center;
+}
+
+.orbit-loader__progress-track {
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(126, 179, 198, 0.16);
+}
+
+.orbit-loader__progress-fill {
+  height: 100%;
+  background: #00f2fe;
+  box-shadow: 0 0 14px rgba(0, 242, 254, 0.8);
+  transition: width 250ms ease;
+}
+
+.orbit-loader__metadata {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  margin-top: 10px;
+  color: #668a9b;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.orbit-loader__metadata span:last-child {
+  color: #00f2fe;
+}
+
+.orbit-loader__footer {
+  position: absolute;
+  right: 24px;
+  bottom: 22px;
+  left: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #527080;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+/* =========================================
+   SMOOTH SECTION NAVIGATION
+========================================= */
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 24px;
+}
+
+#overview,
+#earth,
+#telemetry,
+#news {
+  scroll-margin-top: 28px;
+}
+
+.nav-item {
+  transition:
+    color 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.nav-item.is-active {
+  color: #00f2fe;
+  background: rgba(0, 242, 254, 0.075);
+  border-color: rgba(0, 242, 254, 0.22);
+}
+
+/* =========================================
+   REUSABLE INLINE LOADING STATES
+========================================= */
+
+.orbit-inline-loader {
+  display: flex;
+  min-height: 130px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #8ba9bb;
+  font-family: var(--font-mono, "IBM Plex Mono", monospace);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.orbit-inline-loader__spinner {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(0, 242, 254, 0.18);
+  border-top-color: #00f2fe;
+  border-radius: 50%;
+  animation: orbit-loader-spin 800ms linear infinite;
+}
+
+.orbit-skeleton {
+  position: relative;
+  overflow: hidden;
+  min-height: 70px;
+  border: 1px solid rgba(130, 180, 200, 0.09);
+  border-radius: 12px;
+  background: rgba(120, 160, 180, 0.055);
+}
+
+.orbit-skeleton::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(0, 242, 254, 0.09) 48%,
+    transparent 75%
+  );
+  content: "";
+  transform: translateX(-100%);
+  animation: orbit-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes orbit-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbit-loader-spin-reverse {
+  to {
+    transform: rotate(-305deg);
+  }
+}
+
+@keyframes orbit-loader-pulse {
+  50% {
+    box-shadow:
+      0 0 38px rgba(0, 242, 254, 0.45),
+      inset -12px -7px 20px rgba(0, 0, 0, 0.6);
+  }
+}
+
+@keyframes orbit-loader-grid {
+  to {
+    background-position: 52px 52px;
+  }
+}
+
+@keyframes orbit-skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-loader *,
+  .orbit-skeleton::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .orbit-loader__footer {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    font-size: 8px;
+  }
+
+  .orbit-loader__visual {
+    transform: scale(0.88);
+    margin-bottom: 12px;
+  }
+}
