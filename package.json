@@ -17,6 +17,7 @@
     "react-dom": "19.3.0",
     "react-simple-maps": "^5.0.5",
     "recharts": "^3.10.1",
+    "satellite.js": "^7.1.0",
     "three": "^0.186.1"
   },
   "devDependencies": {
