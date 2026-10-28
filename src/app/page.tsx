@@ -30,6 +30,7 @@ import {
 import CursorEffects from "@/components/CursorEffects";
 import LiveTrackingHUD from "@/components/LiveTrackingHUD";
 import LiveTelemetryCharts from "@/components/LiveTelemetryCharts";
+import MissionControlCenter from "@/components/MissionControlCenter";
 
 
 const EarthScene = dynamic(() => import("@/components/EarthScene"), {
@@ -118,6 +119,8 @@ export default function HomePage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [history, setHistory] = useState<TelemetryRecord[]>([]);
+  const [replayPosition, setReplayPosition] = useState<ISSPosition | null>(null);
+  const scenePosition = replayPosition ?? iss;
 
   async function fetchISS() {
     try {
@@ -391,13 +394,13 @@ export default function HomePage() {
                   </h2>
                   <p>Interactive WebGL planetary view</p>
                 </div>
-                <span className="live-tag">3D SCENE</span>
+                <span className="live-tag">{replayPosition ? "REPLAY MODE" : "3D SCENE"}</span>
               </div>
 
               <EarthScene
-                latitude={iss?.latitude ?? null}
-                longitude={iss?.longitude ?? null}
-                altitude={iss?.altitude ?? null}
+                latitude={scenePosition?.latitude ?? null}
+                longitude={scenePosition?.longitude ?? null}
+                altitude={scenePosition?.altitude ?? null}
               />
 
               <div className="earth-footer">
@@ -502,6 +505,14 @@ export default function HomePage() {
               </a>
             </aside>
           </section>
+
+          <MissionControlCenter
+            iss={iss}
+            lastUpdated={lastUpdated?.getTime() ?? null}
+            error={issError}
+            history={history}
+            onReplayPosition={setReplayPosition}
+          />
 
           <GroundTrackMap
             latitude={iss?.latitude ?? null}
